@@ -1,17 +1,22 @@
 
-
-let startGame = (canvas, width = canvas.width, height = canvas.height, tileDimensions = 7, turnTime = 350) => {
+// canvasElement, props.width, props.height, props.tileDimensions, props.turnTime, props.lifeDensity)
+let startGame = (canvas, width, height, tileDimensions, turnTime, lifeDensity) => {
    let ctx = canvas.getContext('2d')
 
    // Uses dimensions to determine how many tiles our canvas can fit
    let gameBoard = createBoard(width, height, tileDimensions)
-   gameBoard = populate(gameBoard)
+   gameBoard = populate(gameBoard, lifeDensity)
    
    // Contains the call to draw(), hence w/h/dimensions. There must be a better way.
    advanceTime(ctx, width, height, gameBoard, tileDimensions, turnTime)
 }
 
-
+// I am certain there is a better way to do this. I understand what 'hacking' means to a developer now.
+// Giddy personal project progress waits for no man. Or sound architecture.
+let paused = false
+export function pause() {
+   paused = !paused
+}
 
 
 class Tile {
@@ -39,39 +44,29 @@ class Tile {
                continue // If we're outside bounds, go to the next loop
             }
             if (gameBoard[i][j].life) {
-               // console.log(`life at ${i}, ${j}`)
-               // console.log(`${this.x}, ${this.y} life ++`)
                this.neighbors++
             }
             if (gameBoard[i][j].life === false) {
-               // console.log(`no life at ${i}, ${j}`)
+               // ...
             }
          }
       }
-
-      
+    
       
       if (this.life) {
          if (this.neighbors < 2) {
-            // console.log(`Kill1 at ${this.x}, ${this.y} because neighbors = ${this.neighbors}`)
             return false
          }
          if (this.neighbors === 2 || this.neighbors === 3) {
-            // console.log(`life2 at ${this.x}, ${this.y} because neighbors = ${this.neighbors}`)
-
             return true
          }
          if (this.neighbors > 3) {
-            // console.log(`Kill3 at ${this.x}, ${this.y} because neighbors = ${this.neighbors}`)
-
             return false
          }
       }
 
       if (this.life === false) {
          if (this.neighbors === 3) {
-            // console.log(`life4 at ${this.x}, ${this.y} because neighbors = ${this.neighbors}`)
-
             return true
          }
       }
@@ -104,14 +99,13 @@ let createBoard = (width, height, tileDimensions) => {
    return _gameBoard
 }   
 
-let populate = (gameBoard) => {
-   let lifeFraction = .10
+let populate = (gameBoard, lifeDensity) => {
    
    for (let i = 0; i < gameBoard.length; i++) {
       for (let j = 0; j < gameBoard[i].length; j++) {
          let thisRoll = Math.random()
          
-         gameBoard[i][j].life = thisRoll <= lifeFraction ? true : false
+         gameBoard[i][j].life = thisRoll <= lifeDensity ? true : false
       }
    }
 
@@ -123,22 +117,20 @@ let populate = (gameBoard) => {
    // gameBoard[2][2].life = true
    // gameBoard[3][2].life = true
 
-
    return gameBoard
 }
 
 let drawBoard = (ctx, width, height, gameBoard, tileDimensions) => {
    ctx.clearRect(0, 0, width, height) // Clear the board before a redraw. Otherwise we get trails.
-
    for (let i = 0; i < gameBoard.length; i++) {
       for (let j = 0; j < gameBoard[i].length; j++) {
          let tile = gameBoard[i][j]
 
          if (tile.life === true) {
-            ctx.fillStyle = 'yellow'
+            ctx.fillStyle = '#77af77'
             ctx.fillRect(tile.x*tileDimensions, tile.y*tileDimensions, tileDimensions, tileDimensions)
          } else {
-            ctx.fillStyle = 'black'
+            ctx.strokeStyle = 'rgb(30, 30, 42)'
             ctx.strokeRect(tile.x*tileDimensions, tile.y*tileDimensions, tileDimensions, tileDimensions)
          }
       }
@@ -148,32 +140,34 @@ let drawBoard = (ctx, width, height, gameBoard, tileDimensions) => {
 
 
 let advanceTime = (ctx, width, height, gameBoard, tileDimensions, turnTime) => {
-   
    let nextBoard = createBoard(width, height, tileDimensions)
-
+   
+   // We must create a separate copy - calculation needs to be applied all-at-once,
+   // and just creating a new variable operated by reference to the original.
+   // Which meant each changed tile would influence the subsequent tiles. We don't want that.
    for (let i = 0; i < gameBoard.length; i++) {
       for (let j = 0; j < gameBoard[i].length; j++) {
          nextBoard[i][j].life = gameBoard[i][j].life
       }
    }
-   
-   
-   for (let i = 0; i < gameBoard.length; i++) {
-      for (let j = 0; j < gameBoard[i].length; j++) {
-         nextBoard[i][j].life = gameBoard[i][j].decideFate(gameBoard)
+
+   if (!paused) {
+      for (let i = 0; i < gameBoard.length; i++) {
+         for (let j = 0; j < gameBoard[i].length; j++) {
+            nextBoard[i][j].life = gameBoard[i][j].decideFate(gameBoard)
+         }
       }
+      drawBoard(ctx, width, height, gameBoard, tileDimensions) // Uses dimensions just to draw shapes of a size.
    }
-   
-   drawBoard(ctx, width, height, gameBoard, tileDimensions) // Uses dimensions just to draw shapes of a size.
 
    setTimeout( () => {
-      console.log("Turn taken")
+      console.log("tick")
       advanceTime(ctx, width, height, nextBoard, tileDimensions, turnTime)
    }, turnTime)
 }
 
+// let timeNextLoop = setTimeout( () => {
+//    console.log("tick")
+//    advanceTime(ctx, width, height, nextBoard, tileDimensions, turnTime)
+// }, turnTime)
 export default startGame
-
-// Proposed problem: cells are not taking turns simultaneously
-// They seem to be basing their calculations on an updated state of the board after the previous cell decided its fate.
-// How to base calculations on a duplicate of the original instead of, as it seems to be, a board full of references?

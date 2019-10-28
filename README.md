@@ -66,3 +66,7 @@ This section has moved here: https://facebook.github.io/create-react-app/docs/de
 ### `yarn build` fails to minify
 
 This section has moved here: https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify
+
+
+Lesson: 
+Design documents are important. It's one thing to set out with a single, simple goal - to create the simulation - and another to expand its function into things you didn't account for.

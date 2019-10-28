@@ -1,17 +1,9 @@
 import { createStore } from 'redux'
 
-const initialState = {
-
-}
-
-const reducer = (state = initialState, action) => {
-   switch (action.type) {
-
-   }
-}
+import rootReducer from './reducers/index.js'
 
 const store = createStore (
-   reducer, 
+   rootReducer, 
    window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__()
 )
 
